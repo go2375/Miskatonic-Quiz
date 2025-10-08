@@ -43,7 +43,9 @@
                 {% endif %}
                 {% endwith %}
 
-                <p class="small"><a href="#">Mot de passe oublié ?</a></p>
+                <p class="small">
+                <a href="{{ url_for('changer_mdp') }}">Mot de passe oublié ?</a>
+                </p>
             </div>
         </div>
     </div>

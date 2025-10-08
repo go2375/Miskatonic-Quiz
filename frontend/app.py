@@ -13,8 +13,9 @@ app.secret_key = "une_clef_secrete"
 
 
 BASE_DIR = os.path.dirname(__file__)
-DB_PATH = os.path.join(BASE_DIR, 'data', 'bdd_connexion.sqlite')
+DB_PATH = os.path.join(BASE_DIR, 'SQLite', 'data', 'bdd_connexion.sqlite')
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
 
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
@@ -51,16 +52,30 @@ def home():
     if request.method == 'POST':
         identifiant = request.form.get('identif')
         mdp = request.form.get('password')
-        role_id = 1  # par défaut enseignant
 
-        success, message = add_users(identifiant, identifiant, mdp, role_id)
-        flash(message)
-        if success:
-            return redirect(url_for('choix'))
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute("SELECT mot_de_passe FROM utilisateurs WHERE identifiant = ?", (identifiant,))
+            row = cur.fetchone()
+        finally:
+            conn.close()
+
+        if row:
+            stored_hash = row[0]
+            # Si le hash est stocké en TEXT, convertir en bytes
+            if isinstance(stored_hash, str):
+                stored_hash = stored_hash.encode('utf-8')
+
+            if bcrypt.checkpw(mdp.encode('utf-8'), stored_hash):
+                flash("Connexion réussie")
+                return redirect(url_for('choix'))
+
+        flash("Identifiant ou mot de passe incorrect")
         return redirect(url_for('home'))
 
     return render_template('index.html')
-
+          
 # ---- PAGE CREER UN COMPTE ----
 @app.route('/inscription', methods=['GET', 'POST'])
 def inscription():
@@ -69,19 +84,77 @@ def inscription():
         identifiant = request.form.get('username')
         mot_de_passe = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
-        role_id = 2  # étudiant par défaut
+        role_id = 1  # enseignant par défaut
 
+        # Vérification que les mots de passe correspondent
         if mot_de_passe != confirm_password:
             flash("Les mots de passe ne correspondent pas")
             return redirect(url_for('inscription'))
 
-        success, message = register_user(nom_utilisateur, identifiant, mot_de_passe, role_id)
-        flash(message)
-        if success:
+        # Hachage du mot de passe
+        hashed_password = bcrypt.hashpw(mot_de_passe.encode('utf-8'), bcrypt.gensalt())
+
+        # Insertion dans la base SQLite
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO utilisateurs (nom_utilisateur, identifiant, mot_de_passe, role_id)
+                VALUES (?, ?, ?, ?)
+            """, (nom_utilisateur, identifiant, hashed_password, role_id))
+            conn.commit()
+            flash("Utilisateur créé avec succès !")
             return redirect(url_for('home'))
-        return redirect(url_for('inscription'))
+        except sqlite3.IntegrityError:
+            flash("Identifiant déjà utilisé")
+            return redirect(url_for('inscription'))
+        finally:
+            conn.close()
 
     return render_template('create.html')
+
+# ---- PAGE CHANGER UN MOT DE PASSE ----
+@app.route('/changer_mdp', methods=['GET', 'POST'])
+def changer_mdp():
+    if request.method == 'POST':
+        identifiant = request.form.get('identifiant')
+        ancien_mdp = request.form.get('ancien_password')
+        nouveau_mdp = request.form.get('nouveau_password')
+        confirm_mdp = request.form.get('confirm_password')
+
+        if nouveau_mdp != confirm_mdp:
+            flash("Les nouveaux mots de passe ne correspondent pas ⚠️")
+            return redirect(url_for('changer_mdp'))
+
+        # Connexion à la base
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        try:
+            cur.execute("SELECT mot_de_passe FROM utilisateurs WHERE identifiant = ?", (identifiant,))
+            row = cur.fetchone()
+            if not row:
+                flash("Identifiant introuvable")
+                return redirect(url_for('changer_mdp'))
+
+            hashed_old = row[0]
+            if isinstance(hashed_old, str):
+                hashed_old = hashed_old.encode('utf-8')
+
+            if not bcrypt.checkpw(ancien_mdp.encode('utf-8'), hashed_old):
+                flash("Ancien mot de passe incorrect")
+                return redirect(url_for('changer_mdp'))
+
+            # Hash du nouveau mot de passe
+            hashed_new = bcrypt.hashpw(nouveau_mdp.encode('utf-8'), bcrypt.gensalt())
+            cur.execute("UPDATE utilisateurs SET mot_de_passe = ? WHERE identifiant = ?", (hashed_new, identifiant))
+            conn.commit()
+            flash("Mot de passe changé avec succès !")
+            return redirect(url_for('home'))
+
+        finally:
+            conn.close()
+
+    return render_template('changer_mdp.html')
 
 # ---- PAGE CHOIX : Ajouter questions ou accéder au générateur ----
 @app.route('/choix')

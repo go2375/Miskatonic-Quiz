@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changer le mot de passe</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container_creat">
+        <div class="right">
+            <div class="wrapper">
+                <h1>Changer le mot de passe</h1>
+                <form action="{{ url_for('changer_mdp') }}" method="POST">
+
+                    <label for="identifiant">Identifiant</label>
+                    <input type="text" id="identifiant" name="identifiant" placeholder="Votre identifiant" required>
+
+                    <label for="ancien_password">Ancien mot de passe</label>
+                    <input type="password" id="ancien_password" name="ancien_password" placeholder="********" required>
+
+                    <label for="nouveau_password">Nouveau mot de passe</label>
+                    <input type="password" id="nouveau_password" name="nouveau_password" placeholder="********" required>
+
+                    <label for="confirm_password">Confirmer le nouveau mot de passe</label>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="********" required>
+
+                    <button type="submit">Modifier le mot de passe</button>
+                    <button type="button" onclick="window.location.href='{{ url_for('home') }}'">Annuler</button>
+                </form>
+
+                <p class="small">
+                    Retour à la page de connexion ? <a href="{{ url_for('home') }}">Se connecter</a>
+                </p>
+
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="flash-container">
+                    {% for message in messages %}
+                    <p class="flash-message">{{ message }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p class="footer_creat">
+            <a href="#">Mentions légales</a> | <a href="#">Contact</a><br>
+            Copyright © 2025
+        </p>
+    </footer>
+</body>
+
+</html>
