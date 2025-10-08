@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='selection.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Votre Quiz</h1>
+
+    {% for q in questions %}
+      <div class="question-card">
+        <h3>{{ q.question }}</h3>
+        <ul>
+          {% for ans in q.possible_answers %}
+            <li>{{ ans }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+
+    <br>
+    <a href="{{ url_for('selection') }}">Retour à la sélection</a>
+  </div>
+</body>
+</html>

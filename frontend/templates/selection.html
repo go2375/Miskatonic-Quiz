@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Générer votre Quiz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='selection.css') }}">
+</head>
+<body>
+  <div class="container">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Miskatonic" class="logo" />
+    <h1>Veuillez générer des questions supplémentaires aléatoires pour votre quiz</h1>
+    
+    <form method="post" action="{{ url_for('selection') }}">
+      <!-- Sujets -->
+      <label>Choisissez les sujets :</label>
+      {% for suj in sujets %}
+        <input type="checkbox" id="subject-{{ loop.index }}" name="subject" value="{{ suj }}"
+               {% if suj in selected_subjects %} checked {% endif %}>
+        <label for="subject-{{ loop.index }}">{{ suj }}</label>
+      {% endfor %}
+
+      <!-- Catégories -->
+      <label>Choisissez les catégories :</label>
+      {% for cat in categories %}
+        <input type="checkbox" id="category-{{ loop.index }}" name="category" value="{{ cat }}"
+               {% if cat in selected_categories %} checked {% endif %}>
+        <label for="category-{{ loop.index }}">{{ cat }}</label>
+      {% endfor %}
+
+      <button type="submit">Visualiser votre quiz</button>
+    </form>
+  </div>
+</body>
+</html>

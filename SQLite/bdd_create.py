@@ -1,10 +1,11 @@
 import sqlite3, os
 
-os.makedirs("./data", exist_ok=True)  # créer le dossier si besoin
+DB_PATH = "./data/bdd_connexion.sqlite"
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)  # créer le dossier si besoin
 
-sqlite_path = "./data/bdd_connexion.sqlite"
-conn = sqlite3.connect(sqlite_path)
+conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
+
 
 cur.executescript("""
     DROP TABLE IF EXISTS utilisateurs;
@@ -35,5 +36,5 @@ cur.executemany("INSERT INTO roles (role) VALUES (?);", roles)
 conn.commit()
 conn.close()
 
-print(f"Base créée et roles insérés dans {sqlite_path}")
+print(f"Base créée et roles insérés dans {DB_PATH}")
 

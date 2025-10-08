@@ -1,13 +1,51 @@
+import os
 import sqlite3
 import bcrypt
-import os
 
-sqlite_path = "./data/bdd_connexion.sqlite"
-os.makedirs("./data", exist_ok=True)
+# Chemin absolu vers la base SQLite
+BASE_DIR = os.path.dirname(__file__)
+DB_PATH = os.path.join(BASE_DIR, 'data', 'bdd_connexion.sqlite')
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+
+# ---- INITIALISATION DE LA BASE ----
+def init_db():
+    """Crée les tables roles et utilisateurs si elles n'existent pas"""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Table roles
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS roles(
+        role_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT NOT NULL UNIQUE
+    );
+    """)
+
+    # Table utilisateurs
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS utilisateurs(
+        utilisateur_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nom_utilisateur TEXT NOT NULL,
+        identifiant TEXT NOT NULL UNIQUE,
+        mot_de_passe BLOB NOT NULL,
+        role_id INTEGER,
+        FOREIGN KEY (role_id) REFERENCES roles(role_id)
+    );
+    """)
+
+    # Insérer les rôles par défaut
+    roles = ["enseignant", "etudiant", "administrateur"]
+    for role in roles:
+        cur.execute("INSERT OR IGNORE INTO roles (role) VALUES (?)", (role,))
+
+    conn.commit()
+    conn.close()
+
 
 # ---- LOGIN ----
 def add_users(nom_utilisateur, identifiant, mot_de_passe, role_id=1):
-    conn = sqlite3.connect(sqlite_path)
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
     cur.execute("SELECT mot_de_passe, role_id FROM utilisateurs WHERE identifiant=?", (identifiant,))
@@ -29,7 +67,7 @@ def add_users(nom_utilisateur, identifiant, mot_de_passe, role_id=1):
 
 # ---- CREATION UTILISATEUR ----
 def register_user(nom_utilisateur, identifiant, mot_de_passe, role_id):
-    conn = sqlite3.connect(sqlite_path)
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
     # Vérifie si identifiant déjà utilisé
