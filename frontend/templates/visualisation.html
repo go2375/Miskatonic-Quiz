@@ -2,26 +2,36 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Quiz</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='selection.css') }}">
+  <title>Votre Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='visualisation.css') }}">
 </head>
 <body>
   <div class="container">
-    <h1>Votre Quiz</h1>
+    <h1>Voici votre quiz :</h1>
 
-    {% for q in questions %}
-      <div class="question-card">
-        <h3>{{ q.question }}</h3>
-        <ul>
-          {% for ans in q.possible_answers %}
-            <li>{{ ans }}</li>
-          {% endfor %}
-        </ul>
+    {% if questions %}
+      {% for q in questions %}
+      <div class="question-box">
+        <h3>{{ loop.index }}. {{ q.question }}</h3>
+      <div class="answers">
+        {% for ans in q.possible_answers %}
+          <label class="answer {% if ans in q.correct_answers %}correct{% endif %}">
+            <input type="radio" name="q{{ loop.index }}" disabled>
+            {{ ans }}
+          </label>
+        {% endfor %}
       </div>
-    {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="flash-message">Aucune question trouvée pour vos choix.</p>
+    {% endif %}
 
-    <br>
-    <a href="{{ url_for('selection') }}">Retour à la sélection</a>
+    <div class="button-group">
+      <a href="{{ url_for('selection') }}" class="btn">⬅ Retour à la sélection</a>
+      <a href="{{ url_for('add_quest') }}" class="btn secondary">➕ Ajouter des questions</a>
+      <a href="{{ url_for('finalisation') }}" class="btn">➡ Finaliser votre génération du quiz</a>
+    </div>
   </div>
 </body>
 </html>

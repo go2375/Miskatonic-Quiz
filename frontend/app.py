@@ -237,28 +237,41 @@ def visualisation():
     subjects = request.args.get('subjects', '').split(',')
     categories = request.args.get('categories', '').split(',')
 
-    questions_cursor = questions_collection.find({
-        "subject": {"$in": subjects},
-        "use": {"$in": categories}
-    })
-
     questions_list = []
     sujets_set = set()
-    for q in questions_cursor:
-        questions_list.append({
-            "question": q.get("question"),
-            "subject": q.get("subject"),
-            "possible_answers": list(q.get("responses", {}).values()),
-            "correct_answers": q.get("correct", "").split(",")
-        })
-        sujets_set.add(q.get("subject"))
 
-    random.shuffle(questions_list)
+    if subjects and categories:
+        questions_cursor = list(questions_collection.find({
+            "$or": [
+                {"subject": {"$in": subjects}},
+                {"use": {"$in": categories}}
+            ]
+        }))
+
+        random.shuffle(questions_cursor)
+        questions_cursor = questions_cursor[:20]
+
+        for q in questions_cursor:
+            questions_list.append({
+                "question": q.get("question"),
+                "subject": q.get("subject"),
+                "possible_answers": q.get("all_responses", []),
+                "correct_answers": q.get("correct_responses", [])
+            })
+            sujets_set.add(q.get("subject"))
+
     return render_template('visualisation.html',
                            subjects=list(sujets_set),
                            categories=categories,
                            questions=questions_list)
 
+# --- FINALISATION ---
+@app.route('/finalisation')
+@login_required
+def finalisation():
+    # Tu peux préparer des données à passer au template ici
+    return render_template('finalisation.html')
+    
 # --- LOGOUT ---
 @app.route('/logout')
 @login_required

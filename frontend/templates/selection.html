@@ -1,50 +1,60 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Générer votre Quiz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>Générez votre quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='selection.css') }}">
 </head>
 <body>
-<div class="container_creat">
+  <div class="container_creat">
     <div class="wrapper">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Miskatonic" class="top-logo" />
-        <h1>Générez des questions supplémentaires pour votre quiz</h1>
 
-        <form method="post" action="{{ url_for('selection') }}">
-            <!-- Sujets -->
-            <label>Choisissez les sujets :</label>
+      <h1>Générez votre quiz</h1>
+
+      <form method="post" action="{{ url_for('selection') }}">
+
+        <!-- Sujets -->
+        <section class="selection-block">
+          <h2>Choisissez les sujets :</h2>
+          <div class="scrollable-list">
             {% for suj in sujets if suj %}
-                <div class="checkbox-container">
-                    <input type="checkbox" id="subject-{{ loop.index }}" name="subject" value="{{ suj }}"
-                        {% if suj in selected_subjects %} checked {% endif %}>
-                    <label for="subject-{{ loop.index }}">{{ suj }}</label>
-                </div>
+              <div class="checkbox-container">
+                <input type="checkbox" id="subject-{{ loop.index }}" name="subject" value="{{ suj }}"
+                       {% if suj in selected_subjects %} checked {% endif %}>
+                <label for="subject-{{ loop.index }}">{{ suj }}</label>
+              </div>
             {% endfor %}
+          </div>
+        </section>
 
-            <!-- Catégories -->
-            <label>Choisissez les catégories :</label>
+        <!-- Catégories -->
+        <section class="selection-block">
+          <h2>Choisissez les catégories :</h2>
+          <div class="scrollable-list">
             {% for cat in categories if cat %}
-                <div class="checkbox-container">
-                    <input type="checkbox" id="category-{{ loop.index }}" name="category" value="{{ cat }}"
-                        {% if cat in selected_categories %} checked {% endif %}>
-                    <label for="category-{{ loop.index }}">{{ cat }}</label>
-                </div>
+              <div class="checkbox-container">
+                <input type="checkbox" id="category-{{ loop.index }}" name="category" value="{{ cat }}"
+                       {% if cat in selected_categories %} checked {% endif %}>
+                <label for="category-{{ loop.index }}">{{ cat }}</label>
+              </div>
             {% endfor %}
+          </div>
+        </section>
 
-            <button type="submit">Visualiser votre quiz</button>
-        </form>
-
-        {% with messages = get_flashed_messages() %}
+      <!-- Messages flash -->
+      {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="flash-container">
-                {% for message in messages %}
-                    <p class="flash-message">{{ message }}</p>
-                {% endfor %}
-            </div>
+          <div class="flash-container">
+            {% for message in messages %}
+              <p class="flash-message">{{ message }}</p>
+            {% endfor %}
+          </div>
         {% endif %}
-        {% endwith %}
+      {% endwith %}
+      
+        <button type="submit" class="submit-btn">Visualiser votre quiz</button>
+      </form>
     </div>
-</div>
+  </div>
 </body>
 </html>

@@ -1,0 +1,96 @@
+:root { 
+    --primary: #882c65;
+    --primary-hover: #af4c89;
+    --secondary: #555555;
+    --text-color: #ffffff;
+    --correct-color: #4CAF50;
+    --muted: #bdbdbd;
+    --radius: 12px;
+    --font: 'Inter', Arial, sans-serif;
+    --background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), 
+                  url('../static/images/fond-1.jpg') no-repeat center center fixed;
+    --question-bg: rgba(255, 255, 255, 0.05);
+    --border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Global */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+    height: 100%;
+    font-family: var(--font);
+    color: var(--text-color);
+    background: var(--background);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 0;
+}
+
+.container {
+    width: 480px;
+    max-width: 90%;
+    text-align: center;
+}
+
+/* Titres */
+h1 { margin-bottom: 30px; font-size: 28px; font-weight: 600; }
+.flash-message { color: red; font-weight: bold; margin-bottom: 20px; }
+
+/* Question cards */
+.question-box {
+    background: var(--question-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: left;
+    transition: transform 0.2s ease;
+}
+.question-box:hover { transform: translateY(-3px); }
+
+/* Answers */
+.answers { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.answer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.05);
+    position: relative;
+}
+.answer.correct {
+    border: 2px solid var(--correct-color);
+    font-weight: bold;
+}
+.answer.correct::after {
+    content: "✔";
+    color: var(--correct-color);
+    font-weight: bold;
+    margin-left: auto;
+}
+
+/* Buttons */
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+.btn {
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: #fff;
+    background-color: var(--primary);
+    transition: background 0.2s ease;
+}
+.btn:hover { background-color: var(--primary-hover); }
+.btn.secondary { background-color: var(--secondary); }
+.btn.secondary:hover { background-color: #777; }
+
+/* Responsive */
+@media (max-width: 600px) {
+    .container { width: 95%; padding: 20px; }
+    h1 { font-size: 24px; }
+}
