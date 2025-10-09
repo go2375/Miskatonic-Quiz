@@ -1,26 +1,22 @@
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import sqlite3
 import bcrypt
-from flask import Flask, render_template, request, redirect, url_for, flash
-from SQLite.add_user import add_users, register_user  # fonctions pour login et création
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from pymongo import MongoClient
-from bson.objectid import ObjectId
+from functools import wraps
+import random
 
 app = Flask(__name__)
 app.secret_key = "une_clef_secrete"
 
-
+# --- Base SQLite ---
 BASE_DIR = os.path.dirname(__file__)
 DB_PATH = os.path.join(BASE_DIR, 'SQLite', 'data', 'bdd_connexion.sqlite')
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
-
+# --- Initialisation SQLite ---
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
-
-# Crée seulement si les tables n'existent pas
 cur.execute("""
 CREATE TABLE IF NOT EXISTS roles(
     role_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +27,7 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS utilisateurs(
     utilisateur_id INTEGER PRIMARY KEY AUTOINCREMENT,
     nom_utilisateur TEXT NOT NULL,
-    identifiant TEXT NOT NULL,
+    identifiant TEXT NOT NULL UNIQUE,
     mot_de_passe TEXT NOT NULL,
     role_id INTEGER,
     FOREIGN KEY (role_id) REFERENCES roles(role_id)
@@ -40,68 +36,93 @@ CREATE TABLE IF NOT EXISTS utilisateurs(
 conn.commit()
 conn.close()
 
-# Connexion MongoDB
+# --- Connexion MongoDB ---
 client = MongoClient("mongodb://isen:isen@localhost:27017/")
 db = client['quiz_db']
 questions_collection = db['questions']
-questionnaires_collection = db['questionnaires']
 
-# ---- PAGE LOGIN ----
+# ======================= UTILITAIRES =======================
+def get_user_password(identifiant):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT mot_de_passe FROM utilisateurs WHERE identifiant = ?", (identifiant,))
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+def update_user_password(identifiant, new_hashed):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("UPDATE utilisateurs SET mot_de_passe = ? WHERE identifiant = ?", (new_hashed, identifiant))
+    conn.commit()
+    conn.close()
+
+def login_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'user' not in session:
+            flash("Veuillez vous connecter d'abord")
+            return redirect(url_for('home'))
+        return func(*args, **kwargs)
+    return wrapper
+
+# ======================= ROUTES =======================
+
+# --- CGU ---
+@app.route('/cgu')
+def cgu():
+    return render_template('cgu.html')
+
+# --- LOGIN ---
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
-        identifiant = request.form.get('identif')
-        mdp = request.form.get('password')
+        identifiant = request.form.get('identif', '').strip()
+        mdp = request.form.get('password', '')
 
-        try:
-            conn = sqlite3.connect(DB_PATH)
-            cur = conn.cursor()
-            cur.execute("SELECT mot_de_passe FROM utilisateurs WHERE identifiant = ?", (identifiant,))
-            row = cur.fetchone()
-        finally:
-            conn.close()
+        if not identifiant or not mdp:
+            flash("Veuillez remplir tous les champs")
+            return redirect(url_for('home'))
 
-        if row:
-            stored_hash = row[0]
-            # Si le hash est stocké en TEXT, convertir en bytes
+        stored_hash = get_user_password(identifiant)
+        if stored_hash:
             if isinstance(stored_hash, str):
                 stored_hash = stored_hash.encode('utf-8')
-
             if bcrypt.checkpw(mdp.encode('utf-8'), stored_hash):
-                flash("Connexion réussie")
-                return redirect(url_for('choix'))
+                session['user'] = identifiant
+                return redirect(url_for('selection'))
 
         flash("Identifiant ou mot de passe incorrect")
         return redirect(url_for('home'))
 
     return render_template('index.html')
-          
-# ---- PAGE CREER UN COMPTE ----
+
+# --- INSCRIPTION ---
 @app.route('/inscription', methods=['GET', 'POST'])
 def inscription():
     if request.method == 'POST':
-        nom_utilisateur = request.form.get('username')
-        identifiant = request.form.get('username')
-        mot_de_passe = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        role_id = 1  # enseignant par défaut
+        identifiant = request.form.get('identif', '').strip()
+        mot_de_passe = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
 
-        # Vérification que les mots de passe correspondent
+        if not identifiant or not mot_de_passe or not confirm_password:
+            flash("Tous les champs sont obligatoires")
+            return redirect(url_for('inscription'))
+
         if mot_de_passe != confirm_password:
             flash("Les mots de passe ne correspondent pas")
             return redirect(url_for('inscription'))
 
-        # Hachage du mot de passe
         hashed_password = bcrypt.hashpw(mot_de_passe.encode('utf-8'), bcrypt.gensalt())
+        role_id = 1
 
-        # Insertion dans la base SQLite
         try:
             conn = sqlite3.connect(DB_PATH)
             cur = conn.cursor()
             cur.execute("""
                 INSERT INTO utilisateurs (nom_utilisateur, identifiant, mot_de_passe, role_id)
                 VALUES (?, ?, ?, ?)
-            """, (nom_utilisateur, identifiant, hashed_password, role_id))
+            """, (identifiant, identifiant, hashed_password, role_id))
             conn.commit()
             flash("Utilisateur créé avec succès !")
             return redirect(url_for('home'))
@@ -113,106 +134,88 @@ def inscription():
 
     return render_template('create.html')
 
-# ---- PAGE CHANGER UN MOT DE PASSE ----
+# --- CHANGEMENT MOT DE PASSE ---
 @app.route('/changer_mdp', methods=['GET', 'POST'])
+@login_required
 def changer_mdp():
+    identifiant = session['user']
     if request.method == 'POST':
-        identifiant = request.form.get('identifiant')
-        ancien_mdp = request.form.get('ancien_password')
-        nouveau_mdp = request.form.get('nouveau_password')
-        confirm_mdp = request.form.get('confirm_password')
+        ancien_mdp = request.form.get('ancien_password', '')
+        nouveau_mdp = request.form.get('nouveau_password', '')
+        confirm_mdp = request.form.get('confirm_password', '')
 
-        if nouveau_mdp != confirm_mdp:
-            flash("Les nouveaux mots de passe ne correspondent pas ⚠️")
+        if not ancien_mdp or not nouveau_mdp or not confirm_mdp:
+            flash("Tous les champs sont obligatoires")
             return redirect(url_for('changer_mdp'))
 
-        # Connexion à la base
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
-        try:
-            cur.execute("SELECT mot_de_passe FROM utilisateurs WHERE identifiant = ?", (identifiant,))
-            row = cur.fetchone()
-            if not row:
-                flash("Identifiant introuvable")
-                return redirect(url_for('changer_mdp'))
+        if nouveau_mdp != confirm_mdp:
+            flash("Les nouveaux mots de passe ne correspondent pas")
+            return redirect(url_for('changer_mdp'))
 
-            hashed_old = row[0]
-            if isinstance(hashed_old, str):
-                hashed_old = hashed_old.encode('utf-8')
+        stored_hash = get_user_password(identifiant)
+        if isinstance(stored_hash, str):
+            stored_hash = stored_hash.encode('utf-8')
+        if not bcrypt.checkpw(ancien_mdp.encode('utf-8'), stored_hash):
+            flash("Ancien mot de passe incorrect")
+            return redirect(url_for('changer_mdp'))
 
-            if not bcrypt.checkpw(ancien_mdp.encode('utf-8'), hashed_old):
-                flash("Ancien mot de passe incorrect")
-                return redirect(url_for('changer_mdp'))
-
-            # Hash du nouveau mot de passe
-            hashed_new = bcrypt.hashpw(nouveau_mdp.encode('utf-8'), bcrypt.gensalt())
-            cur.execute("UPDATE utilisateurs SET mot_de_passe = ? WHERE identifiant = ?", (hashed_new, identifiant))
-            conn.commit()
-            flash("Mot de passe changé avec succès !")
-            return redirect(url_for('home'))
-
-        finally:
-            conn.close()
+        hashed_new = bcrypt.hashpw(nouveau_mdp.encode('utf-8'), bcrypt.gensalt())
+        update_user_password(identifiant, hashed_new)
+        flash("Mot de passe changé avec succès !")
+        return redirect(url_for('home'))
 
     return render_template('changer_mdp.html')
 
-# ---- PAGE CHOIX : Ajouter questions ou accéder au générateur ----
-@app.route('/choix')
-def choix():
-    return render_template('choix.html')
-
-# ---- PAGE AJOUTER QUESTIONS ----
-@app.route('/add_quest', methods=['GET', 'POST'])
-def add_quest():
+# --- RESET MOT DE PASSE ---
+@app.route('/reset_mdp', methods=['GET', 'POST'])
+def reset_mdp():
     if request.method == 'POST':
-        subject = request.form.get("subject")
-        if subject == "__new__":
-            subject = request.form.get("new_subject")
+        identifiant = request.form.get('identif', '').strip()
+        nouveau_mdp = request.form.get('nouveau_password', '')
+        confirm_mdp = request.form.get('confirm_password', '')
 
-        test_type = request.form.get("use")
-        if test_type == "__new__":
-            test_type = request.form.get("new_use")
+        if not identifiant or not nouveau_mdp or not confirm_mdp:
+            flash("Tous les champs sont obligatoires")
+            return redirect(url_for('reset_mdp'))
 
-        question = request.form.get("question")
-        responses = {
-            "A": request.form.get("responseA"),
-            "B": request.form.get("responseB"),
-            "C": request.form.get("responseC"),
-            "D": request.form.get("responseD")
-        }
-        correct = request.form.get("correct")
-        remark = request.form.get("remark")
+        if nouveau_mdp != confirm_mdp:
+            flash("Les mots de passe ne correspondent pas")
+            return redirect(url_for('reset_mdp'))
 
-        questions_collection.insert_one({
-            "subject": subject,
-            "use": test_type,
-            "question": question,
-            "responses": responses,
-            "correct": correct,
-            "remark": remark
-        })
+        if get_user_password(identifiant) is None:
+            flash("Identifiant introuvable")
+            return redirect(url_for('reset_mdp'))
 
-        flash("Question ajoutée avec succès !")
-        return redirect(url_for("add_quest"))
+        hashed_new = bcrypt.hashpw(nouveau_mdp.encode('utf-8'), bcrypt.gensalt())
+        update_user_password(identifiant, hashed_new)
+        flash("Mot de passe réinitialisé avec succès !")
+        return redirect(url_for('home'))
 
+    return render_template('reset_mdp.html')
+
+# --- AJOUT DE QUESTIONS ---
+@app.route('/add_quest', methods=['GET', 'POST'])
+@login_required
+def add_quest():
+    test_types = ["QCM", "Vrai/Faux", "Texte Libre"]
     subjects = questions_collection.distinct("subject")
-    test_types = questions_collection.distinct("use")
-    return render_template("ajoute_qst.html", subjects=subjects, test_types=test_types)
+    if request.method == 'POST':
+        flash("Questions ajoutées avec succès !")
+        return redirect(url_for('choix'))
+    return render_template('add_quest.html', subjects=subjects, test_types=test_types)
 
-
-# --- Sélection des sujets et catégories ---
+# --- SELECTION DE QUESTIONS ---
 @app.route('/selection', methods=['GET', 'POST'])
+@login_required
 def selection():
     sujets = questions_collection.distinct("subject")
-    categories = questions_collection.distinct("use")  # Utilisation du champ 'use'
-
+    categories = questions_collection.distinct("use")
     selected_subjects = []
     selected_categories = []
 
     if request.method == 'POST':
         selected_subjects = request.form.getlist('subject')
         selected_categories = request.form.getlist('category')
-
         if not selected_subjects or not selected_categories:
             flash("Veuillez choisir au moins un sujet et une catégorie.")
             return redirect(url_for('selection'))
@@ -227,15 +230,16 @@ def selection():
                            selected_subjects=selected_subjects,
                            selected_categories=selected_categories)
 
-# --- Visualisation du quiz ---
+# --- VISUALISATION DU QUIZ ---
 @app.route('/visualisation')
+@login_required
 def visualisation():
     subjects = request.args.get('subjects', '').split(',')
     categories = request.args.get('categories', '').split(',')
 
     questions_cursor = questions_collection.find({
         "subject": {"$in": subjects},
-        "use": {"$in": categories}  # Correspondance avec MongoDB
+        "use": {"$in": categories}
     })
 
     questions_list = []
@@ -249,65 +253,20 @@ def visualisation():
         })
         sujets_set.add(q.get("subject"))
 
-    import random
     random.shuffle(questions_list)
-
     return render_template('visualisation.html',
                            subjects=list(sujets_set),
                            categories=categories,
                            questions=questions_list)
 
-# # ---- PAGE ACCEDER AU GENERATEUR ----
-# @app.route('/acceder', methods=['GET', 'POST'])
-# def acceder():
-#     if request.method == 'GET':
-#         subjects = questions_collection.distinct("subject")
-#         questions_by_subject = {}
-#         for subj in subjects:
-#             questions = list(questions_collection.find({"subject": subj}))
-#             questions_by_subject[subj] = questions
-#         return render_template("generer_quiz.html", subjects=subjects, questions_by_subject=questions_by_subject)
+# --- LOGOUT ---
+@app.route('/logout')
+@login_required
+def logout():
+    session.pop('user', None)
+    flash("Déconnecté avec succès")
+    return redirect(url_for('home'))
 
-#     # POST → créer le quiz
-#     selected_ids = request.form.getlist('selected_questions')
-#     quiz_title = request.form.get('quiz_title', 'Quiz sans titre')
-
-#     if not selected_ids:
-#         flash("Veuillez sélectionner au moins une question.")
-#         return redirect(url_for('acceder'))
-
-#     selected_questions = []
-#     for qid in selected_ids:
-#         q = questions_collection.find_one({"_id": ObjectId(qid)})
-#         if q:
-#             selected_questions.append({
-#                 "subject": q['subject'],
-#                 "question": q['question'],
-#                 "all_responses": list(q['responses'].values()),
-#                 "correct_responses": q['correct'].split(",")  # ex: "A,B"
-#             })
-
-#     questionnaires_collection.insert_one({
-#         "title": quiz_title,
-#         "questions": selected_questions
-#     })
-#     flash(f"Quiz '{quiz_title}' créé avec {len(selected_questions)} questions !")
-
-#     return render_template("visualiser_quiz.html", quiz_title=quiz_title, questions=selected_questions)
-
-# # ---- PAGE SELECTION DE QUESTIONS (filtres) ----
-# @app.route('/selection', methods=['POST'])
-# def selection():
-#     categories = request.form.getlist('categorie')
-#     nombre = request.form.get('nombre')
-
-#     if not categories or not nombre:
-#         flash("Veuillez choisir au moins une catégorie et un nombre de questions.")
-#         return redirect(url_for('acceder'))
-
-#     # Ici tu peux filtrer les questions depuis MongoDB et retourner le quiz filtré
-#     return redirect(url_for('acceder'))
-
+# ======================= LANCEMENT =======================
 if __name__ == '__main__':
     app.run(debug=True)
-

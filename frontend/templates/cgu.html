@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGU - Miskatonic Quiz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container_creat">
+        <div class="right">
+            <div class="wrapper">
+                <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo Miskatonic" class="top-logo">
+                
+                <h1>Conditions Générales d'Utilisation</h1>
+                <p>Bienvenue sur l’outil Miskatonic Quiz réservé aux enseignants de la Miskatonic University.</p>
+
+                <h2>1. Utilisation du service</h2>
+                <p>Les utilisateurs doivent créer un compte avec un identifiant et un mot de passe. Les informations personnelles sont stockées de manière sécurisée.</p>
+
+                <h2>2. Confidentialité</h2>
+                <p>Toutes les données des utilisateurs (identifiants, mots de passe, quiz) sont stockées dans nos bases de données :</p>
+                <p>SQLite : informations utilisateurs avec mots de passe hachés</p>
+                <p>MongoDB : questions et quiz</p>
+
+                <h2>3. Responsabilités</h2>
+                <p>L’université ne peut être tenue responsable de l’usage des quiz générés. Les enseignants sont responsables du contenu qu’ils créent.</p>
+
+                <h2>4. Consentement</h2>
+                <p>En utilisant ce service, vous acceptez la collecte et le traitement des données conformément à ces CGU.</p>
+
+                <button type="button" onclick="window.history.back();">Retour</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

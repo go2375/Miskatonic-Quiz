@@ -183,3 +183,28 @@ hr {
     border: 0;
     border-top: 1px solid #eee;
 }
+
+.checkbox-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.checkbox-items label {
+    background: var(--input-bg);
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.2s;
+    border: 1px solid #ccc;
+}
+
+.checkbox-items label:hover {
+    background: var(--primary-hover);
+    color: #fff;
+}
+
+.checkbox-items input[type="checkbox"] {
+    margin-right: 8px;
+}

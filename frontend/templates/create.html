@@ -12,17 +12,24 @@
     <div class="container_creat">
         <div class="right">
             <div class="wrapper">
+                <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo Miskatonic" class="top-logo">
                 <h1>Créer un compte</h1>
                 <form action="{{ url_for('inscription') }}" method="POST">
-                    <label for="username">Nom d’utilisateur</label>
-                    <input type="text" id="username" name="username" placeholder="Votre futur identifiant" required>
+                    <label for="identif">Nom d’utilisateur</label>
+                    <input type="text" id="identif" name="identif" placeholder="Votre futur identifiant" required autocomplete="username">
 
                     <label for="password">Mot de passe</label>
-                    <input type="password" id="password" name="password" placeholder="********" required>
+                    <input type="password" id="password" name="password" placeholder="********" required autocomplete="new-password">
 
                     <label for="confirm_password">Confirmer le mot de passe</label>
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="********"
-                        required>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="********" required autocomplete="new-password">
+
+                    <div class="checkbox-container">
+                        <label for="cgu">
+                            <input type="checkbox" id="cgu" name="cgu" required>
+                            J’accepte les <a href="{{ url_for('cgu') }}">CGU</a> et la politique de confidentialité
+                        </label>
+                    </div>
 
                     <button type="submit">Créer un compte</button>
                     <button type="button" onclick="window.location.href='{{ url_for('home') }}'">Annuler</button>
@@ -41,17 +48,9 @@
                 </div>
                 {% endif %}
                 {% endwith %}
-
             </div>
         </div>
     </div>
-
-    <footer>
-        <p class="footer_creat">
-            <a href="#">Mentions légales</a> | <a href="#">Contact</a><br>
-            Copyright © 2025
-        </p>
-    </footer>
 </body>
 
 </html>

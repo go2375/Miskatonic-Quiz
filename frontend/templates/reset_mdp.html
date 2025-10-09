@@ -12,11 +12,23 @@
     <div class="container_creat">
         <div class="right">
             <div class="wrapper">
+                <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo Miskatonic" class="top-logo">
                 <h1>Changer le mot de passe</h1>
-                <form action="{{ url_for('changer_mdp') }}" method="POST">
 
-                    <label for="identifiant">Identifiant</label>
-                    <input type="text" id="identifiant" name="identifiant" placeholder="Votre identifiant" required>
+                <!-- Messages flash -->
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="flash-container">
+                    {% for message in messages %}
+                    <p class="flash-message">{{ message }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('changer_mdp') }}" method="POST">
+                    <label for="identif">Identifiant</label>
+                    <input type="text" id="identif" name="identif" placeholder="Votre identifiant" required>
 
                     <label for="ancien_password">Ancien mot de passe</label>
                     <input type="password" id="ancien_password" name="ancien_password" placeholder="********" required>
@@ -34,27 +46,9 @@
                 <p class="small">
                     Retour à la page de connexion ? <a href="{{ url_for('home') }}">Se connecter</a>
                 </p>
-
-                {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                <div class="flash-container">
-                    {% for message in messages %}
-                    <p class="flash-message">{{ message }}</p>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% endwith %}
-
             </div>
         </div>
     </div>
-
-    <footer>
-        <p class="footer_creat">
-            <a href="#">Mentions légales</a> | <a href="#">Contact</a><br>
-            Copyright © 2025
-        </p>
-    </footer>
 </body>
 
 </html>
