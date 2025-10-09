@@ -13,14 +13,20 @@
       {% for q in questions %}
       <div class="question-box">
         <h3>{{ loop.index }}. {{ q.question }}</h3>
-      <div class="answers">
-        {% for ans in q.possible_answers %}
-          <label class="answer {% if ans in q.correct_answers %}correct{% endif %}">
-            <input type="radio" name="q{{ loop.index }}" disabled>
-            {{ ans }}
-          </label>
-        {% endfor %}
-      </div>
+        <div class="answers">
+          {% for ans in q.possible_answers %}
+            <label class="answer {% if ans in q.correct_answers %}correct{% endif %}">
+              <input type="radio" name="q{{ loop.index }}" disabled>
+              {{ ans }}
+            </label>
+          {% endfor %}
+        </div>
+
+        <!-- Bouton Supprimer -->
+        <form method="POST" action="{{ url_for('supprimer_question') }}" class="delete-form">
+          <input type="hidden" name="question_id" value="{{ q._id }}">
+          <button type="submit" class="btn delete-btn">❌ Supprimer cette question</button>
+        </form>
       </div>
       {% endfor %}
     {% else %}
@@ -28,9 +34,9 @@
     {% endif %}
 
     <div class="button-group">
-      <a href="{{ url_for('selection') }}" class="btn">⬅ Retour à la sélection</a>
+      <a href="{{ url_for('selection') }}" class="btn secondary">⬅ Retour à la sélection</a>
       <a href="{{ url_for('add_quest') }}" class="btn secondary">➕ Ajouter des questions</a>
-      <a href="{{ url_for('finalisation') }}" class="btn">➡ Finaliser votre génération du quiz</a>
+      <a href="{{ url_for('finalisation') }}" class="btn primary">➡ Finaliser votre génération du quiz</a>
     </div>
   </div>
 </body>

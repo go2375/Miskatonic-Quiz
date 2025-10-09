@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from pymongo import MongoClient
 from functools import wraps
 import random
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 app.secret_key = "une_clef_secrete"
@@ -264,6 +265,16 @@ def visualisation():
                            subjects=list(sujets_set),
                            categories=categories,
                            questions=questions_list)
+
+                           
+@app.route('/supprimer_question', methods=['POST'])
+@login_required
+def supprimer_question():
+    question_id = request.form.get('question_id')
+    if question_id:
+        questions_collection.delete_one({"_id": ObjectId(question_id)})
+        flash("Question supprimée avec succès !")
+    return redirect(request.referrer or url_for('visualisation'))
 
 # --- FINALISATION ---
 @app.route('/finalisation')
