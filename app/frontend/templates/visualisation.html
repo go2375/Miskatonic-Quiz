@@ -7,7 +7,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Voici votre quiz :</h1>
+    <h1>Voici vos questions :</h1>
 
     {% if questions %}
       {% for q in questions %}
@@ -34,9 +34,9 @@
     {% endif %}
 
     <div class="button-group">
-      <a href="{{ url_for('selection') }}" class="btn secondary">⬅ Retour à la sélection</a>
-      <a href="{{ url_for('add_quest') }}" class="btn secondary">➕ Ajouter des questions</a>
-      <a href="{{ url_for('finalisation') }}" class="btn primary">➡ Finaliser votre génération du quiz</a>
+      <a href="{{ url_for('selection') }}" class="btn secondary">Retour à la sélection</a>
+      <a href="{{ url_for('add_quest') }}" class="btn secondary">Ajouter des questions</a>
+      <a href="{{ url_for('finalisation') }}" class="btn primary">Finaliser votre génération du quiz</a>
     </div>
   </div>
 </body>

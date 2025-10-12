@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ajouter des Questions</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='add_quest.css') }}">
+</head>
+<body>
+<div class="container_creat">
+  <div class="wrapper">
+    <h1>Ajoutez vos questions</h1>
+
+    <div class="flash-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <p class="flash-message {{ category }}">{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+      {% endwith %}
+    </div>
+
+    <form id="quiz-form" method="POST" action="/add_quest">
+      <div id="questions-container">
+        <!-- Template question -->
+        <div class="question-block">
+          <h2>Question 1</h2>
+
+          <label>Sujets :</label>
+          <div class="multi-select">
+            {% for suj in sujets %}
+              <label><input type="checkbox" name="subject[]" value="{{ suj }}"> {{ suj }}</label>
+            {% endfor %}
+            <label><input type="checkbox" name="subject[]" value="__new__"> Nouveau sujet</label>
+            <input type="text" name="new_subject[]" class="hidden" placeholder="Nouveau sujet">
+          </div>
+
+          <label>Types :</label>
+          <div class="multi-select">
+            {% for cat in categories %}
+              <label><input type="checkbox" name="category[]" value="{{ cat }}"> {{ cat }}</label>
+            {% endfor %}
+            <label><input type="checkbox" name="category[]" value="__new__"> Nouveau type</label>
+            <input type="text" name="new_category[]" class="hidden" placeholder="Nouveau type">
+          </div>
+
+          <label>Question :</label>
+          <textarea name="question[]" rows="3" placeholder="Formulez votre question" required></textarea>
+
+          <label>Réponses :</label>
+          <div class="responses-container">
+            <div class="response-item">
+              <input type="text" name="responses[]" placeholder="Réponse A" required>
+              <button type="button" class="mark-correct">✓ Correcte</button>
+              <button type="button" class="delete-response">❌</button>
+            </div>
+            <div class="response-item">
+              <input type="text" name="responses[]" placeholder="Réponse B" required>
+              <button type="button" class="mark-correct">✓ Correcte</button>
+              <button type="button" class="delete-response">❌</button>
+            </div>
+            <button type="button" class="add-response">➕ Ajouter une réponse</button>
+          </div>
+
+          <div class="actions-inline">
+            <button type="button" class="delete-question">Supprimer la question</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" id="add-question-btn">➕ Ajouter une question</button>
+        <button type="submit" class="btn-final">➡ Finaliser le quiz</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='add_quest.js') }}"></script>
+</body>
+</html>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  function attachQuestionEvents(block) {
+    const responsesContainer = block.querySelector(".responses-container");
+    const addResponseBtn = block.querySelector(".add-response");
+
+    // Champs nouveau sujet/type
+    block.querySelectorAll('.multi-select input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const input = cb.parentElement.parentElement.querySelector('input[type="text"]');
+        if (cb.value === "__new__") input.classList.toggle("hidden", !cb.checked);
+      });
+    });
+
+    // Ajouter réponse
+    addResponseBtn.addEventListener("click", () => {
+      const count = responsesContainer.querySelectorAll(".response-item").length;
+      const letter = letters[count];
+      const div = document.createElement("div");
+      div.className = "response-item";
+      div.innerHTML = `
+        <input type="text" name="responses[]" placeholder="Réponse ${letter}" required>
+        <button type="button" class="mark-correct">✓ Correcte</button>
+        <button type="button" class="delete-response">❌</button>
+      `;
+      responsesContainer.insertBefore(div, addResponseBtn);
+      attachResponseEvents(div);
+    });
+
+    // Supprimer réponse
+    block.querySelectorAll(".delete-response").forEach(btn => {
+      btn.addEventListener("click", () => btn.parentElement.remove());
+    });
+
+    // Mark correct
+    block.querySelectorAll(".mark-correct").forEach(btn => {
+      btn.addEventListener("click", () => btn.classList.toggle("active"));
+    });
+
+    // Supprimer question
+    block.querySelector(".delete-question").addEventListener("click", () => {
+      block.remove();
+      updateQuestionNumbers();
+    });
+  }
+
+  function attachResponseEvents(div) {
+    div.querySelector(".delete-response").addEventListener("click", () => div.remove());
+    div.querySelector(".mark-correct").addEventListener("click", e => e.target.classList.toggle("active"));
+  }
+
+  function updateQuestionNumbers() {
+    document.querySelectorAll('.question-block h2').forEach((h2, i) => {
+      h2.textContent = `Question ${i + 1}`;
+    });
+  }
+
+  // Ajouter une nouvelle question
+  const addQuestionBtn = document.getElementById("add-question-btn");
+  addQuestionBtn.addEventListener("click", () => {
+    const firstBlock = document.querySelector('.question-block');
+    const clone = firstBlock.cloneNode(true);
+    clone.querySelectorAll('input, textarea').forEach(el => el.value = "");
+    clone.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    clone.querySelectorAll(".mark-correct").forEach(btn => btn.classList.remove("active"));
+    document.getElementById('questions-container').appendChild(clone);
+    attachQuestionEvents(clone);
+    updateQuestionNumbers();
+  });
+
+  // Initialisation
+  document.querySelectorAll('.question-block').forEach(block => attachQuestionEvents(block));
+});
+</script>
+</body>
+</html>

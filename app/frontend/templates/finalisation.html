@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finalisation du Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='finalisation.css') }}">
+</head>
+<body>
+  <div class="container_creat">
+    <div class="wrapper">
+      <img src="{{ url_for('static', filename='images/logo_univ.png') }}" alt="Logo Miskatonic" class="top-logo">
+
+      <h1>Quiz finalisé !</h1>
+      <p class="subtitle">Voici le code à partager avec vos élèves :</p>
+
+      <input type="text" id="shareCode" class="share-input" value="{{ share_link }}" readonly>
+
+      <div class="buttons-container">
+        <button class="btn copy-btn" id="copyBtn">Copier le code</button>
+        <a href="{{ url_for('selection') }}" class="btn secondary">Créer un nouveau quiz</a>
+        <a href="{{ url_for('index') }}" class="btn primary">Se déconnecter</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const copyBtn = document.getElementById("copyBtn");
+    const shareInput = document.getElementById("shareCode");
+
+    copyBtn.addEventListener("click", () => {
+      shareInput.select();
+      shareInput.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+
+      // Changement de couleur pour retour visuel
+      copyBtn.style.backgroundColor = "#4CAF50";
+      copyBtn.textContent = "Code copié !";
+
+      // Revenir à l'état initial après 2s
+      setTimeout(() => {
+        copyBtn.style.backgroundColor = "#777";
+        copyBtn.textContent = "Copier le code";
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

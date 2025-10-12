@@ -11,6 +11,17 @@ def etl_quiz():
     )
     df['question'] = df['question'].str.replace(":", "", regex=False)
 
+    # Nettoyage des sujets : correction des doublons et fautes
+    df['subject'] = df['subject'].str.strip()  # supprimer espaces en début/fin
+
+    # dictionnaire de correction : clé = version erronée, valeur = version correcte
+    subject_corrections = {
+        "Sytèmes distribués": "Systèmes distribués",
+        "Systèmes distribués ": "Systèmes distribués",  # avec espace éventuel
+    }
+
+    df['subject'] = df['subject'].replace(subject_corrections)
+
     def get_correct_responses(row):
         correct_letters = str(row['correct']).split(',')
         correct_answers = []

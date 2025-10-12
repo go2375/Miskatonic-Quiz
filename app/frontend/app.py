@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from functools import wraps
 import random
 from bson.objectid import ObjectId
+import string
 
 app = Flask(__name__)
 app.secret_key = "une_clef_secrete"
@@ -193,18 +194,7 @@ def reset_mdp():
         return redirect(url_for('home'))
 
     return render_template('reset_mdp.html')
-
-# --- AJOUT DE QUESTIONS ---
-@app.route('/add_quest', methods=['GET', 'POST'])
-@login_required
-def add_quest():
-    test_types = ["QCM", "Vrai/Faux", "Texte Libre"]
-    subjects = questions_collection.distinct("subject")
-    if request.method == 'POST':
-        flash("Questions ajoutées avec succès !")
-        return redirect(url_for('choix'))
-    return render_template('add_quest.html', subjects=subjects, test_types=test_types)
-
+    
 # --- SELECTION DE QUESTIONS ---
 @app.route('/selection', methods=['GET', 'POST'])
 @login_required
@@ -276,12 +266,80 @@ def supprimer_question():
         flash("Question supprimée avec succès !")
     return redirect(request.referrer or url_for('visualisation'))
 
+
+# --- AJOUT DE QUESTIONS ---
+@app.route('/add_quest', methods=['GET', 'POST'])
+@login_required
+@login_required
+def add_quest():
+    sujets = questions_collection.distinct("subject")
+    categories = questions_collection.distinct("use")
+    if request.method == 'POST':
+        questions = request.form.getlist('question[]')
+        # Pour sujets et types multiples
+        subjects_list = [request.form.getlist('subject[]') for _ in questions]
+        new_subjects_list = [request.form.getlist('new_subject[]') for _ in questions]
+        categories_list = [request.form.getlist('category[]') for _ in questions]
+        new_categories_list = [request.form.getlist('new_category[]') for _ in questions]
+
+        responses_all = []
+        corrects_all = []
+
+        # Regrouper réponses et corrects
+        for i, q in enumerate(questions):
+            responses = []
+            corrects = []
+            for key in request.form.keys():
+                if key.startswith('response'):
+                    for idx,val in enumerate(request.form.getlist(key)):
+                        responses.append(val)
+                        if '✔ Correcte' in val:  # placeholder si tu passes correcte
+                            corrects.append(val)
+            responses_all.append(responses)
+            corrects_all.append(corrects)
+
+        # Vérification minimale côté serveur
+        for i, q in enumerate(questions):
+            if not q.strip() or len(responses_all[i])<2 or len(corrects_all[i])<1:
+                flash(f"Question {i+1} invalide")
+                return redirect(url_for('add_quest'))
+
+            # Sujet/type
+            subjects = [s if s!='__new__' else new_subjects_list[i][0] for s in subjects_list[i]]
+            categories_sel = [c if c!='__new__' else new_categories_list[i][0] for c in categories_list[i]]
+
+            questions_collection.insert_one({
+                'question': q,
+                'all_responses': responses_all[i],
+                'correct_responses': corrects_all[i],
+                'subject': subjects,
+                'use': categories_sel,
+                'created_by': session['user']
+            })
+
+        flash("Questions enregistrées !")
+        return redirect(url_for('add_quest'))
+
+    return render_template('add_quest.html', sujets=sujets, categories=categories)
+
+    
+# --- RETOUR PAGE D'ACCUEIL ---
+@app.route('/')
+@login_required
+def index():
+    return redirect(url_for('add_quest'))  # ou vers une vraie page d’accueil si tu en as une
+
 # --- FINALISATION ---
 @app.route('/finalisation')
 @login_required
 def finalisation():
-    # Tu peux préparer des données à passer au template ici
-    return render_template('finalisation.html')
+    # Génération d’un code unique de quiz
+    quiz_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+    # Tu peux aussi sauvegarder ce code dans MongoDB si besoin ici
+    db.codes.insert_one({"code": quiz_code, "user": session['user']})
+
+    return render_template('finalisation.html', quiz_code=quiz_code)
     
 # --- LOGOUT ---
 @app.route('/logout')

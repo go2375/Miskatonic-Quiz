@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+:root {
+    --primary: #882c65;
+    --primary-hover: #af4c89;
+    --secondary: #555555;
+    --text-color: #ffffff;
+    --muted: #bdbdbd;
+    --radius: 12px;
+    --font: 'Inter', Arial, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    font-family: var(--font);
+    color: var(--text-color);
+    background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+                url('../static/images/fond-1.jpg') no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container_creat {
+    width: 100%;
+    max-width: 480px;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wrapper {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 40px;
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    text-align: center;
+}
+
+.top-logo {
+    max-width: 100px;
+    margin: 0 auto 20px auto;
+}
+
+h1 { font-size: 28px; font-weight: 600; margin-bottom: 10px; }
+.subtitle { font-size: 20px; color: var(--muted); margin-bottom: 20px; }
+
+.share-input {
+    padding: 12px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255,255,255,0.1);
+    color: var(--text-color);
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn {
+    padding: 14px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 16px;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    display: block;
+    width: 100%;
+    text-decoration: none; /* pas de soulignement */
+    transition: all 0.2s ease;
+}
+
+.btn.primary { background-color: var(--primary); color: #fff; }
+.btn.primary:hover { background-color: var(--primary-hover); }
+
+.btn.secondary { background-color: var(--secondary); color: #fff; }
+.btn.secondary:hover { background-color: #666; }
+
+.copy-btn { background-color: #777; color: #fff; }
+.copy-btn:hover { background-color: #999; }
+
+/* Responsive */
+@media (max-width: 600px) {
+    h1 { font-size: 22px; }
+    .subtitle { font-size: 16px; }
+    .share-input, .btn { font-size: 14px; }
+}

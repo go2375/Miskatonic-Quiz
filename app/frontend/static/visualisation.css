@@ -26,12 +26,16 @@ html, body {
     padding: 40px 0;
 }
 
-.container {
+.container_creat, .container {
+    background: var(--question-bg);
+    padding: 40px;
+    border-radius: var(--radius);
     width: 480px;
     max-width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
     text-align: center;
 }
-
 /* Titres */
 h1 { margin-bottom: 30px; font-size: 28px; font-weight: 600; }
 .flash-message { color: red; font-weight: bold; margin-bottom: 20px; }
@@ -41,6 +45,8 @@ h1 { margin-bottom: 30px; font-size: 28px; font-weight: 600; }
     background: var(--question-bg);
     border: 2px solid var(--border-color);
     border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
     padding: 20px;
     margin-bottom: 20px;
     text-align: left;
@@ -75,7 +81,8 @@ h1 { margin-bottom: 30px; font-size: 28px; font-weight: 600; }
     padding: 10px 20px;
     margin: 5px;
     border-radius: 10px;
-    font-weight: bold;
+    font-weight: 500;
+    width: 100%;
     text-decoration: none;
     display: inline-block;
     transition: all 0.2s ease;
@@ -113,7 +120,7 @@ h1 { margin-bottom: 30px; font-size: 28px; font-weight: 600; }
 .button-group {
     margin-top: 10px;
     text-align: center;
-    margin-bottom: 45px;
+    margin-bottom: 10px;
 }
 
 .btn:hover { background-color: var(--primary-hover); }
