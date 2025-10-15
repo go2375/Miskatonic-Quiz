@@ -206,8 +206,8 @@ python etl.py
 
 ## 🧑‍💻 Auteurs
 
-Malgorzata Ryczer-Dumas https://github.com/go2375
-Mathieu Laronce https://github.com/MathieuLaronce
+Malgorzata Ryczer-Dumas https://github.com/go2375  
+Mathieu Laronce https://github.com/MathieuLaronce  
 Khawla MILI https://github.com/khaoulaMili123
 
 ---
