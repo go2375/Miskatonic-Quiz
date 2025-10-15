@@ -2,7 +2,7 @@ from pymongo import MongoClient
 import pandas as pd
 
 def etl_quiz():
-    df = pd.read_csv("./data/questions.csv")
+    df = pd.read_csv("/home/mathieu/iadev/khawla/MiskatonicQuizz/data/questions.csv")
     print("CSV chargé :", df.shape, "lignes")
 
     response_cols = [col for col in df.columns if col.lower().startswith('response')]
