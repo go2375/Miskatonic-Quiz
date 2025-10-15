@@ -1,97 +1,220 @@
-# Miskatonic Quiz - Générateur de Quiz
+# 🧠 Miskatonic Quiz Generator
 
-Ce projet est un outil numérique destiné aux enseignants de la prestigieuse Miskatonic University. Il permet de gérer une banque de questions et de générer des quiz personnalisés de manière simple et efficace.
-
-L'application est composée d'un serveur API et d'un client web, offrant une architecture moderne et découplée.
-
-## Architecture Technique
-
-Le projet s'articule autour de deux services principaux et de deux bases de données distinctes :
-
--   **Backend (Serveur API)** : Une API RESTful développée avec **FastAPI** (Python). Elle gère toute la logique métier et les interactions avec les bases de données.
--   **Frontend (Client Web)** : Une application web développée avec **Flask** (Python). Elle sert d'interface utilisateur (IHM) et consomme les données fournies par l'API backend.
--   **Base de Données (Questions)** : **MongoDB** est utilisé pour stocker la collection de questions et les questionnaires générés, offrant flexibilité pour des documents complexes.
--   **Base de Données (Utilisateurs)** : **SQLite** est utilisé pour gérer les utilisateurs, leurs identifiants et leurs mots de passe hachés.
-
-## Fonctionnalités Implémentées
-
--   **Gestion des Utilisateurs** : Inscription des enseignants (mots de passe hachés avec bcrypt).
--   **Gestion des Questions** : Ajout de nouvelles questions à la base de données via une interface dédiée.
--   **Génération de Quiz** :
-    -   Interface de sélection pour filtrer les questions par sujet, type de test et quantité.
-    -   Génération d'un "brouillon" de quiz basé sur les critères.
--   **Curation de Quiz** : Interface permettant de visualiser les questions sélectionnées, de supprimer celles qui ne conviennent pas et de nommer le quiz.
--   **Sauvegarde et Visualisation** :
-    -   Enregistrement du quiz finalisé dans la base de données.
-    -   Liste de tous les quiz enregistrés.
-    -   Visualisation détaillée et page prête à l'impression pour chaque quiz.
+> **Projet universitaire** – Application web complète pour la création, la génération et la gestion de quiz.  
+> Réalisé dans le cadre d’un module de développement full stack à la *Miskatonic University* (projet pédagogique).
 
 ---
 
-## Installation et Lancement
+## 🎯 Contexte et objectifs
 
-Suivez ces étapes pour lancer l'application en environnement de développement.
+Le projet **Miskatonic Quiz** a pour but de développer une **application web complète** permettant aux enseignants :
 
-### 1. Prérequis
+- de **créer leurs propres quiz** en ligne,  
+- d’utiliser une **base de questions existante**,  
+- et de **faire passer les quiz** à leurs étudiants.  
 
--   Python 3.10+
--   Docker et Docker Compose
+L’application a été conçue pour répondre à un **besoin pédagogique** :  
+faciliter l’évaluation et la révision dans un environnement numérique simple et sécurisé.
 
-### 2. Installation
+---
 
+## 🧩 Architecture générale
+
+Le projet est organisé en **deux parties principales** :
+
+| Composant | Description |
+|------------|-------------|
+| **Backend (API)** | Développé avec **FastAPI**, il gère les utilisateurs, les questions et les quiz. |
+| **Frontend (Interface Web)** | Réalisé avec **Flask**, il permet aux enseignants d’interagir avec l’application via des pages HTML. |
+
+Les deux communiquent via des requêtes HTTP (`requests`).
+
+---
+
+## ⚙️ Technologies principales
+
+| Domaine | Outil / Bibliothèque | Rôle |
+|----------|----------------------|------|
+| **Backend API** | [FastAPI](https://fastapi.tiangolo.com/) | Framework Python moderne pour API REST |
+| **Frontend Web** | [Flask](https://flask.palletsprojects.com/) | Interface utilisateur et rendu HTML (Jinja2) |
+| **BDD NoSQL** | [MongoDB](https://www.mongodb.com/) + [PyMongo](https://pymongo.readthedocs.io/) | Stockage des questions et quiz |
+| **BDD SQL** | [SQLite3](https://docs.python.org/3/library/sqlite3.html) | Gestion des utilisateurs et des rôles |
+| **Sécurité** | [bcrypt](https://pypi.org/project/bcrypt/) | Hashage sécurisé des mots de passe |
+| **Traitement des données** | [pandas](https://pandas.pydata.org/) | Lecture et transformation du CSV (ETL) |
+| **Requêtes API** | [requests](https://requests.readthedocs.io/) | Communication entre Flask et FastAPI |
+| **Documentation API** | OpenAPI (auto-générée par FastAPI) | Documentation interactive `/docs` |
+| **Conteneurisation** | Docker + docker-compose | Déploiement multi-services |
+
+---
+
+## 🗂️ Structure du projet
+
+```
+.
+├── app
+│   ├── main.py                  # Point d’entrée FastAPI
+│   ├── routers/                 # Routes principales (auth, questions, quizzes)
+│   ├── models/                  # Modèles de données
+│   └── database/                # Connexions MongoDB & SQLite
+│
+├── frontend
+│   ├── app.py                   # Application Flask (interface utilisateur)
+│   ├── templates/               # Pages HTML (Jinja2)
+│   └── static/                  # CSS, images, JS
+│
+├── data/
+│   ├── questions.csv            # Données fournies
+│   └── bdd_connexion.sqlite     # Base SQLite (utilisateurs)
+│
+├── SQLite/
+│   ├── add_user.py              # Gestion utilisateurs (hashage bcrypt)
+│   └── bdd_create.py            # Création et initialisation de la base SQLite
+│
+├── etl.py                       # Script ETL : import CSV → MongoDB
+├── docker-compose.yml           # Configuration Docker (API, MongoDB, frontend)
+├── README.md                    # Ce fichier 🙂
+└── requirements.txt             # Dépendances Python
+```
+
+---
+
+## 🧱 Bases de données
+
+### 📘 **SQLite** (utilisateurs)
+
+Structure relationnelle classique :
+- `utilisateurs` : nom, identifiant, mot de passe (haché bcrypt), rôle  
+- `roles` : enseignant, étudiant, administrateur  
+
+> Créée automatiquement via le script `bdd_create.py`.
+
+---
+
+### 📗 **MongoDB** (questions & quiz)
+
+Chaque question suit le **template de document MongoDB** suivant :
+
+```json
+{
+  "subject": "Réseaux",
+  "use": "QCM",
+  "question": "Quel protocole est utilisé pour envoyer des e-mails ?",
+  "responses": {
+    "A": "SMTP",
+    "B": "HTTP",
+    "C": "FTP",
+    "D": "SNMP"
+  },
+  "correct": "A",
+  "remark": "SMTP est le protocole standard d’envoi de mails."
+}
+```
+
+Chargement automatisé via le script `etl.py` (lecture du CSV fourni).
+
+---
+
+## 🔒 Sécurité
+
+- **Hashage des mots de passe :** via la librairie `bcrypt`  
+  → les mots de passe ne sont jamais stockés en clair.  
+- **Authentification :** API `/auth/register` et `/auth/login` (prévue pour évolution JWT).  
+- **Séparation des rôles :** administrateur / enseignant / étudiant.  
+
+---
+
+## 🚀 Installation et exécution
+
+### 🧰 Prérequis
+- Python ≥ 3.10  
+- MongoDB ≥ 6.0  
+- (Optionnel) Docker / Docker Compose
+
+---
+
+### 📦 Installation manuelle
+
+1️⃣ **Cloner le projet**
 ```bash
-# 1. Clonez le dépôt
-git clone <URL_DU_DEPOT>
-cd Miskatonic-Quiz
+git clone https://github.com/<ton-utilisateur>/MiskatonicQuiz.git
+cd MiskatonicQuiz
+```
 
-# 2. Créez et activez un environnement virtuel (recommandé)
-python -m venv mvenv
-source mvenv/bin/activate
-# Sur Windows : .\mvenv\Scripts\activate
+2️⃣ **Créer l’environnement virtuel**
+```bash
+python -m venv venv
+source venv/bin/activate  # (ou venv\Scripts\activate sous Windows)
+```
 
-# 3. Installez les dépendances
+3️⃣ **Installer les dépendances**
+```bash
 pip install -r requirements.txt
 ```
 
-### 3. Lancement de l'Application
-
-L'application nécessite 3 terminaux distincts pour fonctionner : un pour la base de données, un pour le backend et un pour le frontend.
-
-**Terminal 1 : Lancer la base de données**
-
-Utilisez Docker Compose pour démarrer le conteneur MongoDB.
-
+4️⃣ **Lancer l’API FastAPI**
 ```bash
-# Lance le service MongoDB en arrière-plan
-docker-compose up -d
+cd app
+uvicorn main:app --reload --port 8080
 ```
 
-**Terminal 2 : Lancer le Backend (API)**
+👉 API accessible sur : [http://localhost:8080/docs](http://localhost:8080/docs)
 
+5️⃣ **Lancer le frontend Flask**
 ```bash
-# Assurez-vous que votre environnement virtuel est activé
-# Lancez le serveur FastAPI sur le port 8000
-uvicorn app.main:app --reload --port 8000
+cd ../frontend
+python app.py
 ```
 
-**Terminal 3 : Lancer le Frontend (Client Web)**
+👉 Interface accessible sur : [http://localhost:5000](http://localhost:5000)
 
+---
+
+### 🐳 Lancement via Docker
 ```bash
-# Assurez-vous que votre environnement virtuel est activé
-# Lancez le serveur Flask sur le port 5000
-flask --app frontend/app run --port 5000
+docker-compose up --build
 ```
 
-### 4. Accéder à l'application
+- API FastAPI → port `8080`  
+- Frontend Flask → port `5000`  
+- MongoDB → port `27017`
 
--   **Application Web** : Ouvrez votre navigateur et allez à l'adresse [http://localhost:5000](http://localhost:5000)
--   **Documentation de l'API** : L'API FastAPI génère automatiquement une documentation interactive. Vous pouvez la consulter à l'adresse [http://localhost:8000/docs](http://localhost:8000/docs)
+---
 
-### 5. Peupler la base de données (Optionnel)
+## 🔄 Chargement des données (ETL)
 
-Pour ajouter des questions initiales à la base de données MongoDB, vous pouvez utiliser le script `etl.py`.
+Le script `etl.py` permet de charger automatiquement les questions fournies (fichier CSV) dans la base MongoDB.
 
 ```bash
-# Exécutez ce script une fois que MongoDB est lancé
 python etl.py
 ```
+
+✅ Nettoie les données  
+✅ Crée les collections `questions`, `subjects`, `test_types`, `questionnaires`
+
+---
+
+## 🧪 Fonctionnalités principales
+
+✅ Authentification et création de compte  
+✅ Ajout de questions par les enseignants  
+✅ Génération automatique de quiz  
+✅ Passage et correction de quiz  
+✅ Visualisation et suppression des quiz  
+✅ Interface responsive et moderne (CSS personnalisé + Google Fonts)
+
+---
+
+## 🧑‍💻 Auteurs
+
+Malgorzata Ryczer-Dumas https://github.com/go2375
+Mathieu Laronce https://github.com/MathieuLaronce
+Khawla MILI https://github.com/khaoulaMili123
+
+---
+
+## 📚 Licence
+
+Projet réalisé à des fins pédagogiques — © Université Miskatonic 2025  
+
+---
+
